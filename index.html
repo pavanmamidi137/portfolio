@@ -536,7 +536,7 @@
         if (t === 'Contact Me') { btn.addEventListener('click', function () { scrollToSection('contact'); }); }
       });
 
-      /* ---------- Contact form (opens the visitor's mail app) ---------- */
+      /* ---------- Contact form (submits to Web3Forms) ---------- */
       var form = document.querySelector('form.space-y-4');
       if (form) {
         form.addEventListener('submit', function (e) {
@@ -549,10 +549,43 @@
           var email = get('input[type="email"]');
           var subject = get('input:not([type="text"]):not([type="email"])');
           var message = get('textarea');
-          var body = 'Name: ' + name + '\nEmail: ' + email + '\n\n' + message;
-          window.location.href = 'mailto:pavanmamidi137@gmail.com?subject='
-            + encodeURIComponent(subject || 'Portfolio contact from ' + name)
-            + '&body=' + encodeURIComponent(body);
+          if (!name || !email || !message) { return; }
+          var btn = form.querySelector('button[type="submit"]');
+          var originalText = btn.innerHTML;
+          btn.disabled = true;
+          btn.innerHTML = 'Sending...';
+          var data = new FormData(form);
+          fetch('https://api.web3forms.com/submit', {
+            method: 'POST',
+            body: data
+          }).then(function (res) { return res.json(); })
+            .then(function (json) {
+              if (json.success) {
+                form.reset();
+                var msg = document.createElement('div');
+                msg.className = 'text-xs font-semibold text-green-400 text-center pt-1';
+                msg.textContent = 'Message sent successfully!';
+                form.appendChild(msg);
+                setTimeout(function () { msg.remove(); }, 4000);
+              } else {
+                var err = document.createElement('div');
+                err.className = 'text-xs font-semibold text-red-300 text-center pt-1';
+                err.textContent = 'Something went wrong. Please try again.';
+                form.appendChild(err);
+                setTimeout(function () { err.remove(); }, 4000);
+              }
+            })
+            .catch(function () {
+              var err = document.createElement('div');
+              err.className = 'text-xs font-semibold text-red-300 text-center pt-1';
+              err.textContent = 'Something went wrong. Please try again.';
+              form.appendChild(err);
+              setTimeout(function () { err.remove(); }, 4000);
+            })
+            .finally(function () {
+              btn.disabled = false;
+              btn.innerHTML = originalText;
+            });
         });
       }
     })();
